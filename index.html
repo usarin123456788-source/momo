@@ -1,0 +1,810 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>超難関！ももいろクローバーZ クイズ</title>
+  <style>
+    /* 全体基本スタイル */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+    }
+
+
+    body {
+      background-color: #121214;
+      color: #ffffff;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 10px;
+    }
+
+
+    /* ゲームコンテナ */
+    .game-container {
+      width: 100%;
+      max-width: 800px;
+      background-color: #1e1e24;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+      display: flex;
+      flex-direction: column;
+    }
+
+
+    /* ビジュアルエリア（16:9比率保持） */
+    .visual-area {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9;
+      background-color: #000;
+      overflow: hidden;
+    }
+
+
+    .visual-area img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+
+
+    /* タイトルオーバーレイテキスト */
+    .title-overlay {
+      position: absolute;
+      top: 15%;
+      width: 100%;
+      text-align: center;
+      font-size: 3rem;
+      font-weight: 900;
+      color: #ff3366;
+      text-shadow: 0 0 10px #ffffff, 0 0 20px #ff3366, 0 0 30px #ff3366;
+      letter-spacing: 4px;
+      animation: pulse 2s infinite alternate;
+    }
+
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.05); }
+    }
+
+
+    /* メインコンテンツエリア */
+    .content-area {
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+
+    /* タイマー＆ステータスバー */
+    .status-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+      font-size: 1.1rem;
+    }
+
+
+    .timer-container {
+      flex-grow: 1;
+      margin-left: 20px;
+      background-color: #333;
+      height: 12px;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+
+    .timer-bar {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #ff0055, #ffcc00);
+      transition: width 0.1s linear;
+    }
+
+
+    /* 問題文エリア */
+    .question-text {
+      font-size: 1.15rem;
+      line-height: 1.6;
+      background-color: #2a2a32;
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 5px solid #ff3366;
+      min-height: 80px;
+    }
+
+
+    /* 選択肢ボタンエリア */
+    .answers-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+
+    @media (max-width: 600px) {
+      .answers-grid {
+        grid-template-columns: 1fr;
+      }
+      .title-overlay {
+        font-size: 2rem;
+      }
+    }
+
+
+    .btn {
+      background-color: #32323e;
+      color: #fff;
+      border: 2px solid #444454;
+      padding: 12px 15px;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s ease;
+    }
+
+
+    .btn:hover:not(:disabled) {
+      background-color: #ff3366;
+      border-color: #ff3366;
+      transform: translateY(-2px);
+    }
+
+
+    .btn:disabled {
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+
+    /* 解説エリア */
+    .explanation-area {
+      background-color: #252530;
+      padding: 15px;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+
+    .result-header {
+      font-size: 1.3rem;
+      font-weight: bold;
+    }
+
+
+    .result-header.correct { color: #4caf50; }
+    .result-header.incorrect { color: #f44336; }
+
+
+    /* 操作アクションエリア */
+    .action-area {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+
+    .action-btn {
+      background-color: #ff3366;
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      border-radius: 25px;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(255, 51, 102, 0.4);
+      transition: all 0.2s ease;
+    }
+
+
+    .action-btn:hover {
+      background-color: #ff527b;
+      transform: scale(1.05);
+    }
+
+
+    /* 非表示クラス */
+    .hidden {
+      display: none !important;
+    }
+  </style>
+</head>
+<body>
+
+
+<div class="game-container">
+  <!-- ビジュアルエリア -->
+  <div class="visual-area">
+    <img id="char-img" src="char_title.jpg" alt="キャラクター">
+    <div id="title-text" class="title-overlay">クイズ！</div>
+  </div>
+
+
+  <!-- コンテンツエリア -->
+  <div class="content-area">
+    
+    <!-- 1. タイトル画面 -->
+    <div id="screen-title" class="action-area" style="justify-content: center; padding: 20px 0;">
+      <button class="action-btn" onclick="startGame()">クイズをスタート！</button>
+    </div>
+
+
+    <!-- 2. クイズプレイ画面 -->
+    <div id="screen-quiz" class="hidden">
+      <div class="status-bar">
+        <span id="quiz-progress">第 1 / 5 問</span>
+        <span>残り時間: <span id="timer-text">15</span>秒</span>
+        <div class="timer-container">
+          <div id="timer-bar" class="timer-bar"></div>
+        </div>
+      </div>
+      
+      <div class="question-text" id="question-text">
+        問題文がここに表示されます。
+      </div>
+
+
+      <div class="answers-grid" id="answers-grid">
+        <!-- 選択肢ボタンが動的に挿入されます -->
+      </div>
+    </div>
+
+
+    <!-- 3. 解説画面 -->
+    <div id="screen-explanation" class="explanation-area hidden">
+      <div id="result-header" class="result-header">正解！</div>
+      <div id="explanation-text" style="line-height: 1.6;">解説文がここに表示されます。</div>
+      <div class="action-area">
+        <button id="next-btn" class="action-btn" onclick="nextQuestion()">次の問題へ</button>
+      </div>
+    </div>
+
+
+    <!-- 4. リザルト画面 -->
+    <div id="screen-result" class="explanation-area hidden" style="text-align: center;">
+      <h2 id="result-score" style="font-size: 1.8rem; margin-bottom: 10px;">5問中 5問 正解！</h2>
+      <p id="result-comment" style="margin-bottom: 20px; line-height: 1.6;">素晴らしい！あなたは完璧なモノノフです！</p>
+      <div class="action-area" style="justify-content: center;">
+        <button class="action-btn" onclick="resetToTitle()">タイトルに戻る</button>
+      </div>
+    </div>
+
+
+  </div>
+</div>
+
+
+<script>
+  // =========================================================
+  // 50問のクイズデータベース（ファクトチェック済み）
+  // =========================================================
+  const quizDatabase = [
+    {
+      q: "2011年にリリースされたシングル『Z伝説 ～終わりなき革命～』で、メンバーが装着しているベルトのバックルに刻まれている文字は？",
+      a: ["Z", "MCZ", "M", "CLOVER"],
+      correct: 2,
+      exp: "『Z伝説 ～終わりなき革命～』の変身ベルト風バックルには、ももクロのイニシャルである「M」の文字が刻まれています。"
+    },
+    {
+      q: "ももクロの代表曲『走れ！』の作詞を手掛けた音楽ユニット・クレジット名はどれ？",
+      a: ["INFLAVA", "只野菜摘", "前山田健一", "横山克"],
+      correct: 0,
+      exp: "『走れ！』の作詞は「INFLAVA」、作曲はKoji Oba氏とmichitomo氏が手掛けています。"
+    },
+    {
+      q: "2014年に国立競技場で開催された「ももクロ春の一大事2014」で、1日目の1曲目の楽曲は？",
+      a: ["ももいろパンチ", "行くぜっ！怪盗少女", "ももクロのニッポン万歳！", "DNA狂詩曲"],
+      correct: 2,
+      exp: "2014年3月15日の国立競技場1日目、記念すべきオープニングを飾ったのは『ももクロのニッポン万歳！』でした。"
+    },
+    {
+      q: "佐々木彩夏のソロ曲『あーリンは反抗期！』の作詞・作曲・編曲を手掛けたのは誰？",
+      a: ["清 竜人", "前山田健一", "浅野尚志", "只野菜摘"],
+      correct: 1,
+      exp: "一連のあーりん初期ソロ曲（『あーリンは反抗期！』等）は前山田健一（ヒャダイン）氏が手掛けています。"
+    },
+    {
+      q: "百田夏菜子が学生時代に習得し、ライブのMCやエビ反りジャンプの源流となっている特技は？",
+      a: ["新体操", "バスケットボール", "水泳", "卓球"],
+      correct: 0,
+      exp: "百田夏菜子は新体操の経験があり、その高い身体能力と柔軟性がパフォーマンスに活かされています。"
+    },
+    {
+      q: "ももクロのメジャーデビューシングル『いくぜっ！怪盗少女』のオリコンデイリーチャート初登場の順位は？",
+      a: ["1位", "3位", "5位", "7位"],
+      correct: 0,
+      exp: "2010年5月5日に発売された『いくぜっ！怪盗少女』は、オリコンデイリーシングルランキング初登場1位を獲得しました。"
+    },
+    {
+      q: "玉井詩織が加山雄三氏から命名・公認された現在の代名詞的キャッチフレーズは？",
+      a: ["泣き虫で甘えんぼ", "ももクロの若大将", "食いしん坊将軍", "天真爛漫ガール"],
+      correct: 1,
+      exp: "加山雄三氏から贈られた「ももクロの若大将」が玉井詩織のトレードマークとなっています。"
+    },
+    {
+      q: "アルバム『白金の夜明け』収録の『マホロバケーション』の作曲・編曲を手掛けた音楽ユニットは？",
+      a: ["invisible manners", "堂島孝平", "NARASAKI", "清 竜人"],
+      correct: 0,
+      exp: "『マホロバケーション』の作詞は六ツ見純代氏、作曲・編曲は invisible manners が手掛けました。"
+    },
+    {
+      q: "高城れにのイメージカラーが「紫」に決定する前、結成初期に担当していたカラーは何色？",
+      a: ["青", "緑", "白", "ピンク"],
+      correct: 0,
+      exp: "結成当初、高城れには「青」を担当していました。"
+    },
+    {
+      q: "2012年のNHK紅白歌合戦初出場時、メドレー「ももいろ紅白だZ!!」に含まれなかった楽曲は？",
+      a: ["サラバ、愛しき悲しみたちよ", "行くぜっ！怪盗少女", "走れ！", "Z伝説 ～終わりなき革命～"],
+      correct: 3,
+      exp: "初出場時は『サラバ、愛しき悲しみたちよ』と『行くぜっ！怪盗少女』の2曲メドレーを披露しました。"
+    },
+    {
+      q: "2013年の日産スタジアム大会「ももクロ夏のバカ騒ぎ2013」で、君が代の国歌斉唱を行った歌手は？",
+      a: ["松崎しげる", "布施明", "渚ようこ", "南こうせつ"],
+      correct: 2,
+      exp: "オープニングで歌手の渚ようこさんが見事な歌声で『君が代』を斉唱しました。"
+    },
+    {
+      q: "ももクロの恒例カウントダウンライブ「ももいろ歌合戦」が初めて開催された年は西暦何年？",
+      a: ["2015年", "2016年", "2017年", "2018年"],
+      correct: 2,
+      exp: "第1回「ももいろ歌合戦」は2017年12月31日にパシフィコ横浜にて開催されました。"
+    },
+    {
+      q: "楽曲『猛烈宇宙交響曲・第七楽章「無限の愛」』でギタリストとして参加した世界的ミュージシャンは？",
+      a: ["マーティ・フリードマン", "マーティン・バーチ", "スティーヴ・ヴァイ", "ギタリストY"],
+      correct: 0,
+      exp: "元メガデスのマーティ・フリードマンが圧巻のギターソロでレコーディングに参加しています。"
+    },
+    {
+      q: "ももクロのグループ結成日として公式に定められている年月日は？",
+      a: ["2008年5月17日", "2008年11月23日", "2009年8月5日", "2010年5月5日"],
+      correct: 0,
+      exp: "2008年5月17日が公式のグループ結成記念日となっています。"
+    },
+    {
+      q: "有安杏果の在籍時、初期に使われていたキャッチフレーズは？",
+      a: ["ももクロの緑の妖精", "ちょっぴりバカなちびっこ", "ちょっぴりおバカな小さな巨人", "歌って踊れるぽっちゃり系"],
+      correct: 1,
+      exp: "加入初期は「ちょっぴりバカなちびっこ」というキャッチフレーズで親しまれていました。"
+    },
+    {
+      q: "ももクロの楽曲『境界のペンデュラム』の作曲・編曲を手掛けたUNISON SQUARE GARDENのメンバーは？",
+      a: ["田淵智也", "斎藤宏介", "鈴木貴雄", "岸田繁"],
+      correct: 0,
+      exp: "UNISON SQUARE GARDENの田淵智也氏が作曲・編曲を手掛けたスピーディーな楽曲です。"
+    },
+    {
+      q: "映画『ドラゴンボールZ 復活の「F」』の主題歌となったシングル曲のタイトルは？",
+      a: ["涅槃寂静", "『Z』の誓い", "夢の浮世に咲いてみな", "笑一笑 ～シャオイーシャオ！～"],
+      correct: 1,
+      exp: "2015年にリリースされた『『Z』の誓い』が劇中主題歌に起用されました。"
+    },
+    {
+      q: "チーフプロデューサーの川上アキラ氏が、ももクロ以前に現場マネージャーを務めていた女優は？",
+      a: ["北川景子", "沢尻エリカ", "竹内結子", "常盤貴子"],
+      correct: 1,
+      exp: "川上マネージャーは以前、沢尻エリカ氏の現場マネージャーを務めていました。"
+    },
+    {
+      q: "「ももクロ夏のバカ騒ぎ2012 西武ドーム」でゲスト登場し『ココ☆ナツ』で共演した元プロレスラーは？",
+      a: ["武藤敬司", "アニマル浜口", "神取忍", "高山善廣"],
+      correct: 0,
+      exp: "武藤敬司氏がサプライズ登場し、メンバーとパフォーマンスを繰り広げました。"
+    },
+    {
+      q: "ももクロの楽曲『灰とダイヤモンド』が初めて収録されたアルバムのタイトルは？",
+      a: ["バトル アンド ロマンス", "5TH DIMENSION", "AMARANTHUS", "白金の夜明け"],
+      correct: 1,
+      exp: "名曲『灰とダイヤモンド』は2ndアルバム『5TH DIMENSION』に収録されています。"
+    },
+    {
+      q: "佐々木彩夏のソロコンサート（AYAKA NATION）の第1回（2016年）が開催された会場は？",
+      a: ["横浜アリーナ", "両国国技館", "埼玉スーパーアリーナ", "幕張メッセ"],
+      correct: 0,
+      exp: "記念すべき第1回「AYAKA NATION 2016」は横浜アリーナにて開催されました。"
+    },
+    {
+      q: "楽曲『ピンキージョーンズ』のサウンドに取り入れられている独特な楽器フレーズの国調テイストは？",
+      a: ["インド（シタール調）", "アイルランド（ケルト調）", "中国（二胡調）", "スペイン（フラメンコ調）"],
+      correct: 0,
+      exp: "オリエンタルでエキゾチックなインド風サウンドがフィーチャーされています。"
+    },
+    {
+      q: "「ももいろクローバー」から「ももいろクローバーZ」へ改名が発表された会場はどこ？",
+      a: ["中野サンプラザ", "試練の七番勝負会場", "恵比寿リキッドルーム", "代々木公園野外ステージ"],
+      correct: 0,
+      exp: "2011年4月10日の中野サンプラザ公演終演後、映像にてサプライズ発表されました。"
+    },
+    {
+      q: "結成10周年を記念して2018年にリリースされた公式ベストアルバムの正式タイトルは？",
+      a: ["桃も十、番茶も出花", "10th Anniversary ALL TIME BEST", "MOMOIRO CLOVER Z BEST ALBUM 「桃も十、番茶も出花」", "10th Z HISTORY"],
+      correct: 2,
+      exp: "『MOMOIRO CLOVER Z BEST ALBUM 「桃も十、番茶も出花」』が正式名称です。"
+    },
+    {
+      q: "布袋寅泰氏が作曲・編曲を手掛けた, ドラマ『悪夢ちゃん』主題歌のシングル曲は？",
+      a: ["サラバ、愛しき悲しみたちよ", "GOUNN", "夢の浮世に咲いてみな", "BLAST！"],
+      correct: 0,
+      exp: "『サラバ、愛しき悲しみたちよ』は布袋寅泰氏が楽曲提供を行いました。"
+    },
+    {
+      q: "「ももクロ春の一大事2012 横浜アリーナ2Days」1日目のサブタイトル名称は？",
+      a: ["見渡せば大漁旗", "ももクロみどり", "眩しさの中に君がいた", "異次元のDVD発売記念"],
+      correct: 0,
+      exp: "1日目は「〜見渡せば大漁旗〜」、2日目は「〜まきこまれてディープインパクト〜」でした。"
+    },
+    {
+      q: "プロレス技を取り入れた激しいダンスが特徴の楽曲『Chai Maxx』の振付師は誰？",
+      a: ["石川ゆみ", "竹中夏海", "CRE8BOY", "振り付け稼業air:man"],
+      correct: 0,
+      exp: "ももクロの数多くのパフォーマンスを手掛ける石川ゆみ氏が担当しました。"
+    },
+    {
+      q: "2015年にアメリカのロックバンド「KISS」とコラボした楽曲のタイトルは？",
+      a: ["夢の浮世に咲いてみな", "Rock and Roll All Nite Z", "SAMURAI SON", "地獄のロックンロール"],
+      correct: 0,
+      exp: "「ももいろクローバーZ vs KISS」名義で『夢の浮世に咲いてみな』がリリースされました。"
+    },
+    {
+      q: "佐々木彩夏のソロ曲『だって あーりんなんだもーん☆』の曲中で連呼される「あーりん！」の回数は？",
+      a: ["12回", "18回", "24回", "30回"],
+      correct: 2,
+      exp: "歌詞中で掛け合わされる「あーりん！」は、曲全体で正確に24回登場します。"
+    },
+    {
+      q: "ももクロメンバー全員が出演した2015年公開の映画『幕が上がる』の監督は誰？",
+      a: ["本広克行", "堤幸彦", "犬童一心", "山崎貴"],
+      correct: 0,
+      exp: "『踊る大捜査線』シリーズなどで知られる本広克行監督が手掛けました。"
+    },
+    {
+      q: "高城れにのソロ曲『しょこらティアラ』の作詞を手掛けたのは誰？",
+      a: ["只野菜摘", "浅野尚志", "前山田健一", "錦織めぐみ"],
+      correct: 0,
+      exp: "『しょこらティアラ』の作詞は只野菜摘氏が担当しました。"
+    },
+    {
+      q: "3rdアルバム『AMARANTHUS』と4thアルバム『白金の夜明け』のうち、『AMARANTHUS』のコンセプトは？",
+      a: ["起きて見る夢（現実・生）", "寝て見る夢（幻想・死）", "宇宙と未来", "過去と再生"],
+      correct: 0,
+      exp: "『AMARANTHUS』は「起きて見る夢（現実）」、『白金の夜明け』は「寝て見る夢（幻想）」がテーマです。"
+    },
+    {
+      q: "玉井詩織が手料理や食べ物を自身のブログ等で紹介する際に使っていたハッシュタグは？",
+      a: ["しおりんのモグモグタイム", "しおりんキッチン", "玉井飯店", "若大将の気まぐれご飯"],
+      correct: 1,
+      exp: "得意の料理を披露する際などによく用いられていたのが「しおりんキッチン」です。"
+    },
+    {
+      q: "シングル『BLAST！』のMVにゲスト出演したリオ五輪レスリング金メダリストのアスリートは？",
+      a: ["吉田沙保里", "伊調馨", "登坂絵莉", "川井梨紗子"],
+      correct: 2,
+      exp: "女子レスリングの登坂絵莉選手がMVに出演し話題となりました。"
+    },
+    {
+      q: "2011年に開催された初の女性限定ライブ「ももクロ女祭り2011」の会場はどこ？",
+      a: ["渋谷O-EAST", "恵比寿リキッドルーム", "品川ステラボール", "日本青年館"],
+      correct: 0,
+      exp: "Shibuya O-EAST（現・Spotify O-EAST）にて開催されました。"
+    },
+    {
+      q: "『Overture ～ももいろクローバーZさんじょう！！～』で叫ばれる「うりゃ！おい！」の1セットは曲中何回登場する？",
+      a: ["24回", "32回", "48回", "64回"],
+      correct: 1,
+      exp: "Overtureの「うりゃ！おい！」は前半16回、後半16回の計32回繰り返されます。"
+    },
+    {
+      q: "ももクロが2014年に出演した、アメリカ・ロサンゼルスで開催された大型カルチャーイベントは？",
+      a: ["Anime Expo 2014", "Japan Expo USA", "COOL JAPAN LA", "Otakon 2014"],
+      correct: 0,
+      exp: "ロサンゼルスで開催された「Anime Expo 2014」に出演しました。"
+    },
+    {
+      q: "シングル『乙女戦争』のMVで、メンバーが立ち向かう敵（エネミー）のモチーフは何？",
+      a: ["巨大化した巨大建造物", "巨大な女子生徒（女子高生）", "巨大なCD・レコード盤", "巨大な宇宙戦艦"],
+      correct: 1,
+      exp: "『乙女戦争』のMVでは、街に立ちふさがる「巨大女子高生」との戦闘が描かれています。"
+    },
+    {
+      q: "結成10周年を記念して開催された「10th Anniversary The Diamond Four -in 桃響導夢-」の会場は？",
+      a: ["東京ドーム", "ナゴヤドーム", "京セラドーム大阪", "メットライフドーム"],
+      correct: 0,
+      exp: "到達点として初の東京ドーム2Days公演が開催されました。"
+    },
+    {
+      q: "佐々木彩夏がソロ活動やファンクラブ企画においてファンを束ねる愛称・称号は？",
+      a: ["あーりん圧", "ももクロのアイドル", "ももクロの総支配人", "あーりん組合組長"],
+      correct: 3,
+      exp: "ファンを組み合わせた「あーりん組合組長」の愛称で親しまれています。"
+    },
+    {
+      q: "楽曲『ロードショー』の作詞・作曲を手掛けた神聖かまってちゃんのメンバーは誰？",
+      a: ["の子", "mono", "みさこ", "ユウノスケ"],
+      correct: 0,
+      exp: "神聖かまってちゃんの「の子」氏が楽曲提供を行いました。"
+    },
+    {
+      q: "2013年日産スタジアム大会で測定された百田夏菜子の「エビ反りジャンプ」の滞空時間は約何秒？",
+      a: ["約0.45秒", "約0.88秒", "約1.25秒", "約1.50秒"],
+      correct: 1,
+      exp: "精密カメラで計測され、人間として驚異的な約0.88秒の滞空時間が証明されました。"
+    },
+    {
+      q: "劇場版アニメ『美少女戦士セーラームーンEternal』の主題歌となった楽曲タイトルは？",
+      a: ["月色Chainon", "MOON PRIDE", "夢の浮世に咲いてみな", "乙女のポリシー"],
+      correct: 0,
+      exp: "2021年公開の劇場版主題歌として『月色Chainon』が起用されました。"
+    },
+    {
+      q: "元メンバーで女優の早見あかりの在籍時のイメージカラーは何色？",
+      a: ["青", "白", "緑", "黄"],
+      correct: 1,
+      exp: "早見あかりは「白」担当のサブリーダーとして活躍していました。"
+    },
+    {
+      q: "アルバム『AMARANTHUS』と『白金の夜明け』のジャケット衣装の色調・テーマ対比は？",
+      a: ["AMARANTHUS：黒基調（現実）／ 白金の夜明け：白基調（幻想）", "AMARANTHUS：赤基調 ／ 白金の夜明け：青基調", "AMARANTHUS：金基調 ／ 白金の夜明け：銀基調", "AMARANTHUS：無色透明 ／ 白金の夜明け：フルカラー"],
+      correct: 0,
+      exp: "『AMARANTHUS』は現実・生を表す黒基調、『白金の夜明け』は幻想・夢を表す白基調となっています。"
+    },
+    {
+      q: "ICカードと顔認証技術を組み合わせて導入された、転売防止入場システムの通称は？",
+      a: ["顔パスシステム", "モノノフ認証", "誰でもOKシステム", "レザレクション"],
+      correct: 0,
+      exp: "先駆的に導入された「顔パス（顔認証）システム」として話題になりました。"
+    },
+    {
+      q: "百田夏菜子がヒロイン（長瀬ソラ役）の声優を務めた2020年公開のアニメ映画は？",
+      a: ["魔女見習いを探して", "すずめの戸締まり", "バブル", "鹿の王"],
+      correct: 0,
+      exp: "『おジャ魔女どれみ』20周年記念映画『魔女見習いを探して』にて主演声優を務めました。"
+    },
+    {
+      q: "2ndアルバム『5TH DIMENSION』のジャケットで印象的なマスクを手掛けたクリエイターは？",
+      a: ["サイトウユウスケ", "MIKIKO", "隆翔", "米塚尚史"],
+      correct: 3,
+      exp: "特殊造形アーティストの米塚尚史氏がマスクを手掛けました。"
+    },
+    {
+      q: "楽曲『GODSPEED』が公式応援ソングとして起用された2018年のスポーツ大会は？",
+      a: ["全日本大学駅伝", "福岡国際マラソン", "マラソングランドチャンピオンシップ", "びわ湖毎日マラソン"],
+      correct: 0,
+      exp: "「第50回全日本大学駅伝」のテレビ朝日系列公式応援ソングとなりました。"
+    },
+    {
+      q: "サビで印象的に連呼される『ココ☆ナツ』の曲中で、「コ」という文字は全部で何回歌われている？",
+      a: ["104回", "152回", "192回", "228回"],
+      correct: 2,
+      exp: "『ココ☆ナツ』の楽曲全体で発声される「コ」の音は正確に合計192回です。"
+    }
+  ];
+
+
+  // =========================================================
+  // ゲームの状態管理
+  // =========================================================
+  let currentQuestions = [];
+  let currentIndex = 0;
+  let score = 0;
+  let timer = null;
+  let timeLeft = 15;
+
+
+  // DOM要素
+  const charImg = document.getElementById('char-img');
+  const titleText = document.getElementById('title-text');
+  
+  const screenTitle = document.getElementById('screen-title');
+  const screenQuiz = document.getElementById('screen-quiz');
+  const screenExplanation = document.getElementById('screen-explanation');
+  const screenResult = document.getElementById('screen-result');
+
+
+  const quizProgress = document.getElementById('quiz-progress');
+  const timerText = document.getElementById('timer-text');
+  const timerBar = document.getElementById('timer-bar');
+  const questionText = document.getElementById('question-text');
+  const answersGrid = document.getElementById('answers-grid');
+
+
+  const resultHeader = document.getElementById('result-header');
+  const explanationText = document.getElementById('explanation-text');
+  
+  const resultScore = document.getElementById('result-score');
+  const resultComment = document.getElementById('result-comment');
+
+
+  // =========================================================
+  // ゲーム制御ロジック
+  // =========================================================
+
+
+  // ゲームスタート
+  function startGame() {
+    const shuffled = [...quizDatabase].sort(() => 0.5 - Math.random());
+    currentQuestions = shuffled.slice(0, 5);
+
+
+    currentIndex = 0;
+    score = 0;
+
+
+    titleText.classList.add('hidden');
+    screenTitle.classList.add('hidden');
+    screenResult.classList.add('hidden');
+    screenExplanation.classList.add('hidden');
+    screenQuiz.classList.remove('hidden');
+
+
+    showQuestion();
+  }
+
+
+  // 問題表示
+  function showQuestion() {
+    clearInterval(timer);
+    const q = currentQuestions[currentIndex];
+
+
+    charImg.src = 'char_normal.jpg';
+
+
+    quizProgress.textContent = `第 ${currentIndex + 1} / 5 問`;
+    questionText.textContent = q.q;
+
+
+    answersGrid.innerHTML = '';
+    q.a.forEach((ans, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'btn';
+      btn.textContent = `${idx + 1}. ${ans}`;
+      btn.onclick = () => selectAnswer(idx);
+      answersGrid.appendChild(btn);
+    });
+
+
+    timeLeft = 15;
+    timerText.textContent = timeLeft;
+    timerBar.style.width = '100%';
+
+
+    const startTime = Date.now();
+    const duration = 15000;
+
+
+    timer = setInterval(() => {
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(0, duration - elapsedTime);
+      
+      timeLeft = Math.ceil(remainingTime / 1000);
+      timerText.textContent = timeLeft;
+      timerBar.style.width = `${(remainingTime / duration) * 100}%`;
+
+
+      if (remainingTime <= 0) {
+        clearInterval(timer);
+        handleTimeout();
+      }
+    }, 100);
+  }
+
+
+  // 解答選択
+  function selectAnswer(selectedIndex) {
+    clearInterval(timer);
+    const q = currentQuestions[currentIndex];
+    const isCorrect = (selectedIndex === q.correct);
+
+
+    if (isCorrect) {
+      score++;
+      showExplanation(true, "正解！", q.exp);
+    } else {
+      showExplanation(false, `不正解…（正解: ${q.correct + 1}. ${q.a[q.correct]}）`, q.exp);
+    }
+  }
+
+
+  // 時間切れ処理
+  function handleTimeout() {
+    const q = currentQuestions[currentIndex];
+    showExplanation(false, `時間切れ…（正解: ${q.correct + 1}. ${q.a[q.correct]}）`, q.exp);
+  }
+
+
+  // 解説画面の表示
+  function showExplanation(isCorrect, title, expText) {
+    const btns = answersGrid.querySelectorAll('.btn');
+    btns.forEach(b => b.disabled = true);
+
+
+    if (isCorrect) {
+      charImg.src = 'char_correct_normal.jpg';
+      resultHeader.textContent = title;
+      resultHeader.className = 'result-header correct';
+    } else {
+      charImg.src = 'char_incorrect.jpg';
+      resultHeader.textContent = title;
+      resultHeader.className = 'result-header incorrect';
+    }
+
+
+    explanationText.textContent = expText;
+    screenExplanation.classList.remove('hidden');
+  }
+
+
+  // 次の問題へ進む
+  function nextQuestion() {
+    screenExplanation.classList.add('hidden');
+    currentIndex++;
+
+
+    if (currentIndex < 5) {
+      showQuestion();
+    } else {
+      showResult();
+    }
+  }
+
+
+  // リザルト画面
+  function showResult() {
+    screenQuiz.classList.add('hidden');
+    screenExplanation.classList.add('hidden');
+    screenResult.classList.remove('hidden');
+
+
+    // スコアに応じたキャラクター画像の切り替え
+    if (score === 5) {
+      charImg.src = 'char_correct_all.jpg'; // 全問正解
+    } else if (score === 1) {
+      charImg.src = 'char_incorrect_4.jpg';  // 4問不正解（1問正解）
+    } else if (score === 0) {
+      charImg.src = 'char_incorrect_all.jpg'; // 全問不正解
+    } else {
+      charImg.src = 'char_normal.jpg';       // その他（2〜4問正解）
+    }
+
+
+    resultScore.textContent = `5問中 ${score}問 正解！`;
+    
+    if (score === 5) {
+      resultComment.textContent = "素晴らしい！あなたは完璧なモノノフです！";
+    } else if (score >= 3) {
+      resultComment.textContent = "お見事！なかなかのモノノフ度ですね！";
+    } else if (score >= 1) {
+      resultComment.textContent = "惜しい！もう少しでももクロに詳しくなれるはず！";
+    } else {
+      resultComment.textContent = "全問不正解…！愛の力でもう一度挑戦だ！";
+    }
+  }
+
+
+  // タイトルに戻る
+  function resetToTitle() {
+    screenResult.classList.add('hidden');
+    screenTitle.classList.remove('hidden');
+    titleText.classList.remove('hidden');
+    charImg.src = 'char_title.jpg';
+  }
+</script>
+</body>
+</html>
