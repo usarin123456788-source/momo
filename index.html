@@ -230,7 +230,7 @@
 <div class="game-container">
   <!-- ビジュアルエリア -->
   <div class="visual-area">
-    <img id="char-img" src="char_title.png" alt="キャラクター">
+    <img id="char-img" src="images/char_title.jpg" alt="キャラクター">
     <div id="title-text" class="title-overlay">クイズ！</div>
   </div>
 
@@ -665,8 +665,8 @@
     const q = currentQuestions[currentIndex];
 
 
-    // キャラクター画像：通常
-    charImg.src = 'char_normal.png';
+    // キャラクター画像：通常 (.jpg に修正)
+    charImg.src = 'images/char_normal.jpg';
 
 
     // 画面表示更新
@@ -742,13 +742,13 @@
     btns.forEach(b => b.disabled = true);
 
 
-    // キャラクター画像の切り替え
+    // キャラクター画像の切り替え (.jpg に修正)
     if (isCorrect) {
-      charImg.src = 'char_correct_normal.png';
+      charImg.src = 'images/char_correct_normal.jpg';
       resultHeader.textContent = title;
       resultHeader.className = 'result-header correct';
     } else {
-      charImg.src = 'char_incorrect.png';
+      charImg.src = 'images/char_incorrect.jpg';
       resultHeader.textContent = title;
       resultHeader.className = 'result-header incorrect';
     }
@@ -780,4 +780,32 @@
     screenResult.classList.remove('hidden');
 
 
-    result
+    // リザルト用画像 (.jpg に修正)
+    charImg.src = 'images/char_title.jpg';
+
+
+    resultScore.textContent = `5問中 ${score}問 正解！`;
+
+
+    if (score === 5) {
+      resultComment.textContent = "パーフェクト！あなたは完璧なモノノフです！素晴らしい知識量！";
+    } else if (score >= 3) {
+      resultComment.textContent = "素晴らしい！かなりのモノノフ度ですね！全問正解を目指して再挑戦してみましょう！";
+    } else {
+      resultComment.textContent = "お疲れ様でした！まだまだ伸びしろタップリ。何度も挑戦して全問正解を目指そう！";
+    }
+  }
+
+
+  // タイトルに戻る
+  function resetToTitle() {
+    charImg.src = 'images/char_title.jpg';
+    titleText.classList.remove('hidden');
+    screenResult.classList.add('hidden');
+    screenTitle.classList.remove('hidden');
+  }
+</script>
+
+
+</body>
+</html>
